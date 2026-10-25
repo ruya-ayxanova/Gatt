@@ -1,0 +1,17 @@
+name: takvim
+description: Takvim ve ezan vakitleri
+publish_to: none
+version: 1.0.0+1
+environment:
+  sdk: '>=3.5.0 <4.0.0'
+dependencies:
+  flutter:
+    sdk: flutter
+  flutter_local_notifications: ^17.2.4
+  timezone: ^0.9.4
+  flutter_timezone: ^2.1.0
+  shared_preferences: ^2.3.2
+flutter:
+  uses-material-design: true
+  assets:
+    - cities.txt

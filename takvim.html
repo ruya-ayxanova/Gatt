@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>تورک تقویمی و اذانی</title>
+<style>
+:root{--bg:#e9eeea;--card:#f7f9f6;--ink:#17302b;--mute:#5d7570;--acc:#b8821f;--line:#cfd9d3;--sel:#17302b;--selt:#f7f9f6;color-scheme:light}
+@media (prefers-color-scheme:dark){:root{--bg:#0f1d1b;--card:#172a27;--ink:#e4eee9;--mute:#8fa8a2;--acc:#e0b04f;--line:#2a423e;--sel:#e0b04f;--selt:#0f1d1b;color-scheme:dark}}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.4 system-ui,sans-serif}
+body{padding:env(safe-area-inset-top,0) 14px env(safe-area-inset-bottom,0);max-width:520px;margin:0 auto}
+header{padding:20px 4px 12px}
+.next{font:600 15px Georgia,serif;color:var(--mute)}
+.big{font:400 52px/1.1 Georgia,serif;letter-spacing:-1px}
+.left{color:var(--acc);font-weight:600}
+.bar{position:relative;height:6px;background:var(--line);border-radius:3px;margin:16px 4px 22px}
+.tick{position:absolute;top:-3px;width:2px;height:12px;background:var(--ink);opacity:.5}
+.now{position:absolute;top:-6px;width:12px;height:18px;margin-left:-6px;background:var(--acc);border-radius:6px}
+.loc{display:flex;gap:8px;margin-bottom:14px}
+select,input,textarea,button{font:inherit;color:inherit}
+select,input,textarea{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:10px}
+select{flex:1;min-width:0}
+button{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:10px 12px}
+button.p{background:var(--sel);color:var(--selt);border-color:var(--sel)}
+.nav{display:flex;align-items:center;justify-content:space-between;margin:6px 0}
+.nav b{font:600 20px Georgia,serif}
+.g{display:grid;grid-template-columns:repeat(7,1fr);gap:4px;text-align:center}
+.g .h{font-size:12px;line-height:1.2;color:var(--mute);padding:6px 0}
+.d{aspect-ratio:1;border:0;border-radius:10px;background:transparent;padding:0;position:relative;font-size:16px}
+.d.t{outline:2px solid var(--acc)}
+.d.s{background:var(--sel);color:var(--selt)}
+.d.n::after{content:"";position:absolute;bottom:6px;left:50%;margin-left:-3px;width:6px;height:6px;border-radius:3px;background:var(--acc)}
+.panel{background:var(--card);border-radius:16px;padding:16px;margin:16px 0 28px}
+.panel h2{margin:0 0 10px;font:600 18px Georgia,serif}
+.row{display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--line)}
+.row:last-of-type{border:0}
+.row.cur{color:var(--acc);font-weight:700}
+textarea{width:100%;min-height:80px;margin-top:10px;resize:vertical}
+.small{font-size:13px;color:var(--mute);margin-top:8px}
+.ed{display:none;background:var(--card);border-radius:16px;padding:16px;margin:0 0 28px}.ed.o{display:block}.ed input,.ed select{width:100%;margin:3px 0}.ed .two{display:grid;grid-template-columns:1fr 1fr;gap:0 8px}.ed h3{margin:12px 0 4px;font:600 16px Georgia,serif}.custom{display:none;gap:8px;margin-bottom:14px}
+.custom input{flex:1;min-width:0}
+</style>
+</head>
+<body>
+<header>
+  <div class="next" id="nextName"></div>
+  <div class="big" id="nextTime"></div>
+  <div class="left" id="left"></div>
+  <div class="bar" id="bar"></div>
+</header>
+
+<div class="loc">
+  <select id="city"></select>
+  <button id="gps">Konumum</button>
+</div>
+<div class="custom" id="custom">
+  <input id="lat" inputmode="decimal" placeholder="Enlem (41.01)">
+  <input id="lng" inputmode="decimal" placeholder="Boylam (28.98)">
+  <button class="p" id="setll">Kaydet</button>
+</div>
+
+<select id="cal" style="width:100%;margin-bottom:8px"><option value="g">Miladi takvim</option><option value="j">Hicri Şemsî takvim</option></select>
+<div class="nav">
+  <button id="prev" aria-label="Önceki ay">‹</button>
+  <b id="month"></b>
+  <button id="nextm" aria-label="Sonraki ay">›</button>
+</div>
+<div class="g" id="grid"></div>
+
+<section class="panel">
+  <h2 id="dayTitle"></h2>
+  <div id="times"></div>
+  <textarea id="note" placeholder="Bu güne not ekle"></textarea>
+  <div class="small">Vakitler Tahran Üniversitesi yöntemiyle (sabah 17,7°, akşam 4,5°, yatsı 14°) konumdan hesaplanır, internet gerekmez. Şer'î gece yarısı, gün batımı ile ertesi sabah ezanı arasının ortasıdır.</div>
+</section>
+
+<button id="edbtn" style="width:100%;margin-bottom:14px">Ay ve gün adlarını düzenle</button>
+<section class="ed" id="ed">
+  <h3>Ay adları</h3><div class="two" id="edm"></div>
+  <h3>Gün adları</h3><div class="two" id="edd"></div>
+  <h3>Vakit adları</h3><div class="two" id="edp"></div>
+  <h3>Haftanın ilk günü</h3><select id="ws"></select>
+  <button id="edreset" style="margin-top:12px">Varsayılana dön</button>
+</section>
+
+<script>
+const $=id=>document.getElementById(id);
+const R=Math.PI/180, fix=(a,b)=>a-b*Math.floor(a/b);
+const OLDPN=['Sabah','Doğuş','Öğle','İkindi','Gün batımı','Akşam','Yatsı','Gece yarısı'];
+const DPN=['صبح اذانی','گون دوغومو','ناهار اذانی','ایکیندی اذانی','گون باتومی','آخشام اذانی','گجه اذانی','گجه یاریسی'];
+const DM=['Ocak','Şubat','Mart','Nisan','Mayıs','Haziran','Temmuz','Ağustos','Eylül','Ekim','Kasım','Aralık'];
+const OLDDD=['Pzt','Sal','Çar','Per','Cum','Cmt','Paz'];
+const DD=['دوز گونو','آرا گون','اود گونو','سو گونو','آینی گونو','یئل لی گون','سود گونو'];
+const OLDDMJ=['Ferverdin','Erdibehişt','Hordad','Tir','Mordad','Şehriver','Mihr','Aban','Azer','Dey','Behmen','İsfend'];
+const DMJ=['آغلار گولر','گولن آی','قیزاران آی','قورا بیشیرن','قویروق دوغان','زومار آیی','خزل آیی','قیروو آیی','آذر','چیلله','دوندوران آی','بایرام آیی'];
+const div=(a,b)=>Math.trunc(a/b), mod=(a,b)=>a-Math.floor(a/b)*b;
+const BR=[-61,9,38,199,426,686,756,818,1111,1181,1210,1635,2060,2097,2192,2262,2324,2394,2456,3178];
+function jalCal(jy){
+  let gy=jy+621,leapJ=-14,jp=BR[0],jm,jump,i;
+  for(i=1;i<BR.length;i++){jm=BR[i];jump=jm-jp;if(jy<jm)break;leapJ+=div(jump,33)*8+div(mod(jump,33),4);jp=jm}
+  let n=jy-jp;
+  leapJ+=div(n,33)*8+div(mod(n,33)+3,4);
+  if(mod(jump,33)===4&&jump-n===4)leapJ+=1;
+  const leapG=div(gy,4)-div((div(gy,100)+1)*3,4)-150, march=20+leapJ-leapG;
+  if(jump-n<6)n=n-jump+div(jump+4,33)*33;
+  let leap=mod(mod(n+1,33)-1,4); if(leap===-1)leap=4;
+  return {leap,gy,march};
+}
+function g2d(gy,gm,gd){
+  let d=div((gy+div(gm-8,6)+100100)*1461,4)+div(153*mod(gm+9,12)+2,5)+gd-34840408;
+  return d-div(div(gy+100100+div(gm-8,6),100)*3,4)+752;
+}
+function d2g(jdn){
+  let j=4*jdn+139361631;
+  j+=div(div(4*jdn+183187720,146097)*3,4)*4-3908;
+  const i=div(mod(j,1461),4)*5+308, gd=div(mod(i,153),5)+1, gm=mod(div(i,153),12)+1;
+  return [div(j,1461)-100100+div(8-gm,6),gm,gd];
+}
+function j2d(jy,jm,jd){const r=jalCal(jy);return g2d(r.gy,3,r.march)+(jm-1)*31-div(jm,7)*(jm-7)+jd-1}
+function d2j(jdn){
+  const gy=d2g(jdn)[0]; let jy=gy-621; const r=jalCal(jy); let k=jdn-g2d(gy,3,r.march);
+  if(k>=0){if(k<=185)return [jy,1+div(k,31),mod(k,31)+1];k-=186}
+  else{jy-=1;k+=179;if(r.leap===1)k+=1}
+  return [jy,7+div(k,30),mod(k,30)+1];
+}
+const toJ=d=>d2j(g2d(d.getFullYear(),d.getMonth()+1,d.getDate()));
+const G={'İran':'تهران,35.69,51.39;تبریز,38.08,46.29;ارومیه,37.55,45.07;اردبیل,38.25,48.30;زنجان,36.68,48.48;قزوین,36.27,50.00;کرج,35.84,50.99;قم,34.64,50.88;اراک,34.09,49.69;همدان,34.80,48.51;کرمانشاه,34.31,47.07;سنندج,35.31,46.99;ایلام,33.64,46.42;خرم‌آباد,33.49,48.36;اهواز,31.32,48.67;یاسوج,30.67,51.59;شهرکرد,32.33,50.86;اصفهان,32.65,51.67;یزد,31.90,54.37;شیراز,29.59,52.58;بوشهر,28.92,50.84;بندرعباس,27.19,56.27;زاهدان,29.50,60.86;کرمان,30.28,57.08;بیرجند,32.87,59.22;مشهد,36.30,59.61;بجنورد,37.48,57.33;گرگان,36.84,54.43;ساری,36.56,53.06;رشت,37.28,49.58;سمنان,35.58,53.39;خوی,38.55,44.95;میاندوآب,36.97,46.10;مراغه,37.39,46.24;مرند,38.43,45.77;مهاباد,36.76,45.72;بوکان,36.52,46.21;سلماس,38.20,44.77;ماکو,39.30,44.52;اهر,38.48,47.07;سراب,37.94,47.54;میانه,37.42,47.71;بناب,37.34,46.06;شبستر,38.18,45.70;پارس‌آباد,39.65,47.92;مشگین‌شهر,38.40,47.68;خلخال,37.62,48.52;ابهر,36.15,49.22;سقز,36.25,46.27;بانه,35.99,45.89;مریوان,35.52,46.18;قروه,35.17,47.80;دزفول,32.38,48.40;آبادان,30.34,48.30;خرمشهر,30.44,48.17;ماهشهر,30.56,49.20;بهبهان,30.59,50.24;ایذه,31.83,49.87;بروجرد,33.90,48.76;دورود,33.49,49.06;ملایر,34.30,48.82;نهاوند,34.19,48.37;کاشان,33.98,51.41;نجف‌آباد,32.63,51.37;خمینی‌شهر,32.69,51.52;شاهین‌شهر,32.86,51.55;سیرجان,29.45,55.68;رفسنجان,30.41,55.99;جیرفت,28.68,57.74;بم,29.11,58.36;زابل,31.03,61.50;چابهار,25.29,60.64;ایرانشهر,27.20,60.68;نیشابور,36.21,58.80;سبزوار,36.21,57.68;تربت حیدریه,35.27,59.22;قوچان,37.11,58.51;کاشمر,35.24,58.47;گناباد,34.35,58.68;لار,27.68,54.34;جهرم,28.50,53.56;مرودشت,29.87,52.80;کازرون,29.62,51.65;فسا,28.94,53.65;آمل,36.47,52.35;بابل,36.55,52.68;قائم‌شهر,36.46,52.86;بهشهر,36.69,53.55;گنبد کاووس,37.25,55.17;آزادشهر,37.09,55.17;لاهیجان,37.21,50.00;بندر انزلی,37.47,49.46;لنگرود,37.20,50.15;آستارا,38.43,48.87;رودسر,37.14,50.29;ساوه,35.02,50.36;شاهرود,36.42,54.97;دامغان,36.17,54.34;اسلامشهر,35.55,51.23;ورامین,35.33,51.65;شهریار,35.66,51.06','Türkiye':'Adana,37.00,35.32;Adıyaman,37.76,38.28;Afyonkarahisar,38.76,30.54;Ağrı,39.72,43.05;Aksaray,38.37,34.03;Amasya,40.65,35.83;Ankara,39.93,32.86;Antalya,36.90,30.71;Ardahan,41.11,42.70;Artvin,41.18,41.82;Aydın,37.85,27.84;Balıkesir,39.65,27.89;Bartın,41.64,32.34;Batman,37.88,41.13;Bayburt,40.26,40.23;Bilecik,40.14,29.98;Bingöl,38.88,40.50;Bitlis,38.40,42.11;Bolu,40.73,31.61;Burdur,37.72,30.29;Bursa,40.19,29.06;Çanakkale,40.15,26.41;Çankırı,40.60,33.62;Çorum,40.55,34.95;Denizli,37.78,29.09;Diyarbakır,37.91,40.24;Düzce,40.84,31.16;Edirne,41.68,26.56;Elazığ,38.67,39.22;Erzincan,39.75,39.49;Erzurum,39.90,41.27;Eskişehir,39.78,30.52;Gaziantep,37.07,37.38;Giresun,40.91,38.39;Gümüşhane,40.46,39.48;Hakkâri,37.58,43.74;Hatay,36.40,36.35;Iğdır,39.92,44.04;Isparta,37.76,30.55;İstanbul,41.01,28.98;İzmir,38.42,27.14;Kahramanmaraş,37.58,36.94;Karabük,41.20,32.62;Karaman,37.18,33.22;Kars,40.60,43.10;Kastamonu,41.38,33.78;Kayseri,38.73,35.49;Kilis,36.72,37.12;Kırıkkale,39.85,33.52;Kırklareli,41.74,27.23;Kırşehir,39.15,34.17;Kocaeli,40.77,29.94;Konya,37.87,32.48;Kütahya,39.42,29.98;Malatya,38.35,38.31;Manisa,38.61,27.43;Mardin,37.31,40.74;Mersin,36.80,34.64;Muğla,37.22,28.36;Muş,38.74,41.49;Nevşehir,38.62,34.71;Niğde,37.97,34.68;Ordu,40.98,37.88;Osmaniye,37.07,36.25;Rize,41.02,40.52;Sakarya,40.78,30.40;Samsun,41.29,36.33;Siirt,37.93,41.94;Sinop,42.03,35.15;Sivas,39.75,37.02;Şanlıurfa,37.16,38.79;Şırnak,37.52,42.46;Tekirdağ,40.98,27.51;Tokat,40.31,36.55;Trabzon,41.00,39.72;Tunceli,39.11,39.55;Uşak,38.68,29.41;Van,38.49,43.38;Yalova,40.65,29.27;Yozgat,39.82,34.81;Zonguldak,41.46,31.80','Azərbaycan':'Bakı,40.41,49.87;Gəncə,40.68,46.36;Sumqayıt,40.59,49.67;Xırdalan,40.45,49.75;Mingəçevir,40.77,47.05;Lənkəran,38.75,48.85;Şəki,41.19,47.17;Naxçıvan,39.21,45.41;Şirvan,39.93,48.93;Yevlax,40.62,47.15;Quba,41.36,48.51;Qusar,41.43,48.43;Xaçmaz,41.46,48.80;Siyəzən,41.08,49.11;Şamaxı,40.63,48.64;İsmayıllı,40.79,48.15;Qəbələ,40.98,47.85;Zaqatala,41.63,46.64;Balakən,41.72,46.41;Qax,41.42,46.92;Oğuz,41.07,47.46;Göyçay,40.65,47.74;Ağdaş,40.65,47.47;Bərdə,40.37,47.13;Ağcabədi,40.05,47.46;Ağdam,39.99,46.93;Füzuli,39.60,47.14;Cəbrayıl,39.40,47.03;Şuşa,39.76,46.75;Xankəndi,39.82,46.76;Tərtər,40.34,46.93;Goranboy,40.61,46.79;Gədəbəy,40.57,45.82;Şəmkir,40.83,46.02;Tovuz,40.99,45.63;Qazax,41.09,45.37;Ağstafa,41.12,45.45;Masallı,39.03,48.66;Astara,38.46,48.87;Cəlilabad,39.21,48.50;Salyan,39.60,48.98;Neftçala,39.37,49.25;Hacıqabul,40.04,48.92;Biləsuvar,39.46,48.54;Sabirabad,40.00,48.48;İmişli,39.87,48.06;Beyləqan,39.77,47.62;Kürdəmir,40.34,48.16;Lerik,38.77,48.42;Ordubad,38.90,46.02;Culfa,38.96,45.63;Şərur,39.55,44.98;Kəlbəcər,40.10,46.04;Laçın,39.64,46.55;Zəngilan,39.09,46.65'};
+const CITIES={'Bölgem':[36.5,46.15]};
+for(const g in G)G[g]=G[g].split(';').map(x=>{const a=x.split(',');CITIES[a[0]]=[+a[1],+a[2]];return a[0]});
+let S={city:'Bölgem',lat:36.5,lng:46.15,notes:{},m:DM.slice(),d:DD.slice(),ws:5,pn:DPN.slice(),cal:'g',mj:DMJ.slice(),wsj:5};
+try{Object.assign(S,JSON.parse(localStorage.getItem('takvim')||'{}'))}catch(e){}
+if(JSON.stringify(S.pn)===JSON.stringify(OLDPN))S.pn=DPN.slice();
+if(JSON.stringify(S.mj)===JSON.stringify(OLDDMJ))S.mj=DMJ.slice();
+if(JSON.stringify(S.d)===JSON.stringify(OLDDD)){S.d=DD.slice();S.ws=5;S.wsj=5}
+const save=()=>{try{localStorage.setItem('takvim',JSON.stringify(S))}catch(e){}};
+const key=d=>d.getFullYear()+'-'+(d.getMonth()+1)+'-'+d.getDate();
+let today=new Date(), sel=new Date(today), view=new Date(today.getFullYear(),today.getMonth(),1), vj=toJ(today).slice(0,2);
+
+function calc(date,lat,lng){
+  const tz=-new Date(date.getFullYear(),date.getMonth(),date.getDate(),12).getTimezoneOffset()/60;
+  const d=Date.UTC(date.getFullYear(),date.getMonth(),date.getDate(),12)/864e5+2440587.5-2451545;
+  const g=fix(357.529+.98560028*d,360), q=fix(280.459+.98564736*d,360);
+  const L=fix(q+1.915*Math.sin(g*R)+.02*Math.sin(2*g*R),360), e=23.439-3.6e-7*d;
+  const ra=fix(Math.atan2(Math.cos(e*R)*Math.sin(L*R),Math.cos(L*R))/R/15,24);
+  const dec=Math.asin(Math.sin(e*R)*Math.sin(L*R))/R;
+  const eq=fix(q/15-ra+12,24)-12, noon=12+tz-lng/15-eq;
+  const t=a=>Math.acos((-Math.sin(a*R)-Math.sin(dec*R)*Math.sin(lat*R))/(Math.cos(dec*R)*Math.cos(lat*R)))/R/15;
+  const asr=-Math.atan(1/(1+Math.tan(Math.abs(lat-dec)*R)))/R;
+  const f=noon-t(17.7), ss=noon+t(.833);
+  return [f,noon-t(.833),noon,noon+t(asr),ss,noon+t(4.5),noon+t(14),ss+(f+24-ss)/2];
+}
+const fmt=h=>{if(isNaN(h))return '--:--';let m=Math.round(fix(h,24)*60)%1440;return String(Math.floor(m/60)).padStart(2,'0')+':'+String(m%60).padStart(2,'0')};
+
+function header(){
+  const now=new Date(), h=now.getHours()+now.getMinutes()/60+now.getSeconds()/3600;
+  const tm=calc(now,S.lat,S.lng);
+  let i=tm.findIndex(x=>x>h), target, nm;
+  if(i<0){const tt=calc(new Date(now.getFullYear(),now.getMonth(),now.getDate()+1),S.lat,S.lng);target=tt[0]+24;nm=S.pn[0]}
+  else{target=tm[i];nm=S.pn[i]}
+  $('nextName').innerHTML='<bdi>'+esc(nm)+'</bdi>';
+  $('nextTime').textContent=fmt(target);
+  const m=Math.max(0,Math.round((target-h)*60));
+  $('left').textContent=(m>=60?Math.floor(m/60)+' sa ':'')+m%60+' dk kaldı';
+  $('bar').innerHTML=tm.map(x=>'<span class="tick" style="left:'+(fix(x,24)/24*100)+'%"></span>').join('')+'<span class="now" style="left:'+(h/24*100)+'%"></span>';
+}
+
+const isJ=()=>S.cal==='j', WS=()=>isJ()?S.wsj:S.ws, MN=()=>isJ()?S.mj:S.m;
+function monthInfo(){
+  if(isJ()){
+    const [jy,jm]=vj, len=jm<=6?31:jm<=11?30:(jalCal(jy).leap===0?30:29), j0=j2d(jy,jm,1);
+    return {title:'<bdi>'+esc(S.mj[jm-1])+'</bdi> '+jy,days:Array.from({length:len},(_,i)=>{const g=d2g(j0+i);return {date:new Date(g[0],g[1]-1,g[2]),label:i+1}})};
+  }
+  const y=view.getFullYear(),m=view.getMonth(),n=new Date(y,m+1,0).getDate();
+  return {title:'<bdi>'+esc(S.m[m])+'</bdi> '+y,days:Array.from({length:n},(_,i)=>({date:new Date(y,m,i+1),label:i+1}))};
+}
+function render(){
+  const mi=monthInfo(), w=WS();
+  $('month').innerHTML=mi.title;
+  const first=((mi.days[0].date.getDay()+6)%7-w+7)%7;
+  let html=[0,1,2,3,4,5,6].map(i=>'<div class="h">'+S.d[(w+i)%7]+'</div>').join('')+'<div></div>'.repeat(first);
+  mi.days.forEach(o=>{const k=key(o.date);
+    html+='<button class="d'+(k===key(today)?' t':'')+(k===key(sel)?' s':'')+(S.notes[k]?' n':'')+'" data-t="'+o.date.getTime()+'">'+o.label+'</button>'});
+  $('grid').innerHTML=html;
+  if(isJ()){const j=toJ(sel);$('dayTitle').innerHTML=j[2]+' <bdi>'+esc(S.mj[j[1]-1])+'</bdi> '+j[0]+', '+esc(S.city)}
+  else $('dayTitle').innerHTML=sel.getDate()+' <bdi>'+esc(S.m[sel.getMonth()])+'</bdi> '+sel.getFullYear()+', '+esc(S.city);
+  const tm=calc(sel,S.lat,S.lng), isT=key(sel)===key(today), nh=today.getHours()+today.getMinutes()/60;
+  const cur=isT?tm.findIndex(x=>x>nh):-1;
+  $('times').innerHTML=tm.map((x,i)=>'<div class="row'+(i===cur?' cur':'')+'"><span><bdi>'+esc(S.pn[i])+'</bdi></span><span>'+fmt(x)+'</span></div>').join('');
+  $('note').value=S.notes[key(sel)]||'';
+}
+
+$('grid').onclick=e=>{const b=e.target.closest('.d');if(!b)return;sel=new Date(+b.dataset.t);render()};
+function step(n){
+  if(isJ()){let y=vj[0],m=vj[1]+n;if(m<1){m=12;y--}if(m>12){m=1;y++}vj=[y,m]}
+  else view=new Date(view.getFullYear(),view.getMonth()+n,1);
+  render();
+}
+$('prev').onclick=()=>step(-1);
+$('nextm').onclick=()=>step(1);
+$('note').oninput=e=>{const k=key(sel);if(e.target.value.trim())S.notes[k]=e.target.value;else delete S.notes[k];save();
+  const b=document.querySelector('.d.s');if(b)b.classList.toggle('n',!!S.notes[k])};
+
+const opts='<option>Bölgem</option>'+Object.keys(G).map(g=>'<optgroup label="'+g+'">'+G[g].map(c=>'<option>'+c+'</option>').join('')+'</optgroup>').join('')+'<option value="_c">Koordinat gir…</option>';
+$('city').innerHTML=opts;
+$('city').value=CITIES[S.city]?S.city:'_c';
+$('custom').style.display=$('city').value==='_c'?'flex':'none';
+$('city').onchange=e=>{
+  if(e.target.value==='_c'){$('custom').style.display='flex';return}
+  $('custom').style.display='none';
+  S.city=e.target.value;[S.lat,S.lng]=CITIES[S.city];save();header();render();
+};
+$('setll').onclick=()=>{
+  const a=parseFloat($('lat').value.replace(',','.')), o=parseFloat($('lng').value.replace(',','.'));
+  if(isNaN(a)||isNaN(o)||Math.abs(a)>66||Math.abs(o)>180){alert('Enlem −66 ile 66, boylam −180 ile 180 arasında olmalı.');return}
+  S.city='Özel konum';S.lat=a;S.lng=o;save();header();render();
+};
+$('gps').onclick=()=>{
+  if(!navigator.geolocation){alert('Bu cihaz konumu desteklemiyor.');return}
+  navigator.geolocation.getCurrentPosition(p=>{
+    S.city='Konumum';S.lat=p.coords.latitude;S.lng=p.coords.longitude;save();
+    if(![...$('city').options].some(o=>o.value==='Konumum'))$('city').insertAdjacentHTML('afterbegin','<option>Konumum</option>');
+    $('city').value='Konumum';$('custom').style.display='none';header();render();
+  },()=>alert('Konum alınamadı. Konum iznini açın veya listeden şehir seçin.'),{timeout:15000});
+};
+if(S.city==='Konumum'||S.city==='Özel konum'){$('city').insertAdjacentHTML('afterbegin','<option>'+S.city+'</option>');$('city').value=S.city}
+const esc=t=>t.replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;');
+function buildEd(){
+  $('edm').innerHTML=MN().map((x,i)=>'<input dir="auto" data-m="'+i+'" value="'+esc(x)+'">').join('');
+  $('edd').innerHTML=S.d.map((x,i)=>'<input dir="auto" data-w="'+i+'" value="'+esc(x)+'">').join('');
+  $('edp').innerHTML=S.pn.map((x,i)=>'<input dir="auto" data-p="'+i+'" value="'+esc(x)+'">').join('');
+  $('ws').innerHTML=S.d.map((x,i)=>'<option value="'+i+'">'+esc(x)+'</option>').join('');
+  $('ws').value=WS();
+}
+$('edbtn').onclick=()=>{buildEd();$('ed').classList.toggle('o')};
+$('ed').oninput=e=>{const t=e.target;
+  if(t.dataset.m!==undefined)MN()[+t.dataset.m]=t.value;
+  else if(t.dataset.w!==undefined)S.d[+t.dataset.w]=t.value;
+  else if(t.dataset.p!==undefined){S.pn[+t.dataset.p]=t.value;header()}
+  else return;
+  save();render()};
+$('ws').onchange=e=>{if(isJ())S.wsj=+e.target.value;else S.ws=+e.target.value;save();render()};
+$('edreset').onclick=()=>{S.m=DM.slice();S.mj=DMJ.slice();S.d=DD.slice();S.pn=DPN.slice();S.ws=5;S.wsj=5;save();buildEd();render()};
+$('cal').value=S.cal;
+$('cal').onchange=e=>{S.cal=e.target.value;vj=toJ(sel).slice(0,2);view=new Date(sel.getFullYear(),sel.getMonth(),1);save();buildEd();render()};
+header();render();setInterval(header,30000);
+</script>
+</body>
+</html>
