@@ -133,3 +133,19 @@ ps3 = open('pubspec.yaml', encoding='utf-8').read()
 if 'android_intent_plus' not in ps3:
     ps3 = ps3.replace('  shared_preferences: ^2.3.2', '  shared_preferences: ^2.3.2\n  android_intent_plus: ^5.1.0')
     open('pubspec.yaml', 'w', encoding='utf-8').write(ps3)
+# Özel yazı tipleri: ana klasördeki .ttf/.otf dosyaları
+os.makedirs('fonts', exist_ok=True)
+fl = []
+for f in sorted(os.listdir('.')):
+    if f.lower().endswith(('.ttf', '.otf')):
+        fam = os.path.splitext(f)[0]
+        shutil.copy(f, 'fonts/' + f)
+        fl.append((fam, f))
+open('fonts.txt', 'w', encoding='utf-8').write('\n'.join(fam for fam, _ in fl) + '\n')
+ps4 = open('pubspec.yaml', encoding='utf-8').read()
+if 'fonts.txt' not in ps4:
+    ps4 = ps4.replace('    - cities.txt', '    - cities.txt\n    - fonts.txt', 1)
+if fl and '\n  fonts:' not in ps4:
+    block = '  fonts:\n' + ''.join('    - family: "%s"\n      fonts:\n        - asset: fonts/%s\n' % (fam, f) for fam, f in fl)
+    ps4 = ps4.replace('\nflutter:\n', '\nflutter:\n' + block, 1)
+open('pubspec.yaml', 'w', encoding='utf-8').write(ps4)
