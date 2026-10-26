@@ -913,7 +913,7 @@ class _HomeState extends State<Home> {
       await schedule(c);
       setState(() {
         city = c;
-        msg = T('Ezan 14 gün için kuruldu');
+        msg = T('Ezan 365 gün için kuruldu');
       });
     } catch (e) {
       setState(() {
