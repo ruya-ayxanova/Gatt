@@ -15,6 +15,7 @@ jobs:
       - run: flutter create --platforms=android --project-name takvim --org com.takvim .
       - run: python3 patch.py
       - run: flutter pub get
+      - run: dart run flutter_launcher_icons
       - run: flutter build apk --release --no-shrink
       - uses: actions/upload-artifact@v4
         with:
