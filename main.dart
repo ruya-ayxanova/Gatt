@@ -885,7 +885,7 @@ class _HomeState extends State<Home> {
     await perms();
     try {
       await schedule(c);
-      setState(() => msg = T('Ezan 14 gün için kuruldu'));
+      setState(() => msg = T('Ezan 365 gün için kuruldu'));
     } catch (e) {
       setState(() => err += 'alarm kurma: $e\n');
     }
