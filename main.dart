@@ -226,7 +226,7 @@ List<String> eventsFor(DateTime d, bool jal, [bool qam = false]) {
     if (d.weekday == DateTime.wednesday && j[1] >= 11) {
       final diff = j2d(j[0] + 1, 1, 1) - g2d(d.year, d.month, d.day);
       if (diff >= 1 && diff <= 28) {
-        out.add(const ['توریاق چارشنبه‌سی (چارشنبه سوری)', 'یئل چارشنبه‌سی', 'اؤد چارشنبه‌سی', 'سو چارشنبه‌سی'][(diff - 1) ~/ 7]);
+        out.add(const ['تورپاق چارشنبه‌سی (چارشنبه سوری)', 'یئل چارشنبه‌سی', 'اؤد چارشنبه‌سی', 'سو چارشنبه‌سی'][(diff - 1) ~/ 7]);
       }
     }
   } else {
@@ -246,7 +246,8 @@ int langIdx = 0, nameIdx = 2;
 final langRev = ValueNotifier<int>(0);
 final textScale = ValueNotifier<double>(1.0);
 final themeId = ValueNotifier<int>(0);
-
+List<String> fontList = [];
+final fontFam = ValueNotifier<String?>(null);
 class Preset {
   final String key;
   final int seed;
@@ -743,7 +744,7 @@ void main() {
       builder: (_, __) => MaterialApp(
           title: 'تورک تقویمی و اذانی',
           theme: buildTheme(Brightness.light),
-          darkTheme: buildTheme(Brightness.dark),
+          darkTheme: fontFamily: fontFam.value ?? p.font,
           themeMode: themeMode.value,
           builder: (c, w) => MediaQuery(
               data: MediaQuery.of(c).copyWith(textScaler: TextScaler.linear(MediaQuery.textScalerOf(c).scale(1.0) * textScale.value)),
@@ -902,7 +903,7 @@ class _HomeState extends State<Home> {
       await schedule(c);
       setState(() {
         city = c;
-        msg = T('Ezan 14 gün için kuruldu');
+        msg = T('Ezan 365 gün için kuruldu');
       });
     } catch (e) {
       setState(() {
