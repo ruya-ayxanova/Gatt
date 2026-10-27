@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:convert';
+import 'dart:io' show HttpClient;
 import 'dart:typed_data';
 import 'dart:math' as m;
 import 'package:flutter/material.dart';
@@ -249,6 +250,36 @@ final themeId = ValueNotifier<int>(0);
 List<String> fontList = []; // repodaki .ttf dosyalarından gelen yazı tipleri
 final fontFam = ValueNotifier<String?>(null); // seçilen yazı tipi (null = temaya göre)
 
+// ---- Uygulama içi güncelleme (GitHub Releases) ----
+const int kBuild = int.fromEnvironment('BUILD', defaultValue: 0); // build.yml her derlemede doldurur
+const String updateRepo = 'ruya-ayxanova/Gatt';
+
+class UpdateInfo {
+  final int build;
+  final String url;
+  UpdateInfo(this.build, this.url);
+}
+
+Future<UpdateInfo> fetchLatest() async {
+  final c = HttpClient()..connectionTimeout = const Duration(seconds: 10);
+  try {
+    final rq = await c.getUrl(Uri.parse('https://api.github.com/repos/$updateRepo/releases/latest'));
+    rq.headers.set('Accept', 'application/vnd.github+json');
+    final rs = await rq.close().timeout(const Duration(seconds: 15));
+    if (rs.statusCode != 200) throw 'HTTP ${rs.statusCode}';
+    final j = jsonDecode(await rs.transform(utf8.decoder).join()) as Map;
+    final build = int.tryParse((j['tag_name'] as String).replaceAll(RegExp(r'[^0-9]'), '')) ?? 0;
+    String? url;
+    for (final a in (j['assets'] as List)) {
+      if ((a['name'] as String).endsWith('.apk')) url = a['browser_download_url'] as String;
+    }
+    if (url == null) throw 'APK yok';
+    return UpdateInfo(build, url);
+  } finally {
+    c.close();
+  }
+}
+
 class Preset {
   final String key;
   final int seed;
@@ -386,6 +417,12 @@ const _t = <String, String>{
   "Yazı boyutu": "Yazı ölçüsü|یازی اؤلچوسو|اندازه متن|Text size|حجم الخط|Размер текста|Textgröße|Taille du texte|Tamaño del texto|Dimensione del testo|Tamanho do texto|Rozmiar tekstu",
   "Yazı tipi": "Şrift|یازی نوعو|فونت|Font|الخط|Шрифт|Schriftart|Police|Fuente|Carattere|Fonte|Czcionka",
   "Temaya göre": "Temaya görə|تمایا گؤره|مطابق پوسته|By theme|حسب المظهر|По теме|Nach Design|Selon le thème|Según el tema|Secondo il tema|Conforme o tema|Według motywu",
+  "Güncelleme": "Yenilənmə|آپدئیت|به‌روزرسانی|Update",
+  "Güncellemeyi denetle": "Yenilənməni yoxla|آپدئیتی یوخلا|بررسی به‌روزرسانی|Check for updates",
+  "Yeni sürüm var": "Yeni versiya var|یئنی نسخه وار|نسخه جدید موجود است|New version available",
+  "Uygulama güncel": "Tətbiq yenidir|تطبیق یئنیدیر|برنامه به‌روز است|App is up to date",
+  "Güncelle": "Yenilə|یئنیله|به‌روزرسانی|Update now",
+  "Denetlenemedi, internetinizi kontrol edin": "Yoxlamaq mümkün olmadı, internetinizi yoxlayın|یوخلاماق مومکون اولمادی، اینترنتینیزی یوخلایین|بررسی ممکن نشد، اینترنت را بررسی کنید|Could not check, check your internet",
   "Sıfırla": "Sıfırla|سیفیرلا|بازنشانی|Reset|إعادة تعيين|Сбросить|Zurücksetzen|Réinitialiser|Restablecer|Ripristina|Redefinir|Resetuj",
   "Örnek metin: Ezan vakitleri ve takvim": "Nümunə mətn: Azan vaxtları və təqvim|نمونه متن: اذان واختلاری و تقویم|متن نمونه: اوقات اذان و تقویم|Sample text: Prayer times and calendar|نص تجريبي: أوقات الأذان والتقويم|Пример текста: время намаза и календарь|Beispieltext: Gebetszeiten und Kalender|Texte d'exemple : horaires de prière et calendrier|Texto de ejemplo: horarios de oración y calendario|Testo di esempio: orari di preghiera e calendario|Texto de exemplo: horários de oração e calendário|Przykładowy tekst: czasy modlitw i kalendarz",
   "Ezan ses seviyesi": "Azan səs səviyyəsi|اذان سس سویه سی|میزان صدای اذان|Adhan volume|مستوى صوت الأذان|Громкость азана|Adhan-Lautstärke|Volume de l'adhan|Volumen del adhan|Volume dell'adhan|Volume do adhan|Głośność adhanu",
@@ -885,7 +922,7 @@ class _HomeState extends State<Home> {
     await perms();
     try {
       await schedule(c);
-      setState(() => msg = T('Ezan 365 gün için kuruldu'));
+      setState(() => msg = T('Ezan 14 gün için kuruldu'));
     } catch (e) {
       setState(() => err += 'alarm kurma: $e\n');
     }
@@ -913,7 +950,7 @@ class _HomeState extends State<Home> {
       await schedule(c);
       setState(() {
         city = c;
-        msg = T('Ezan 365 gün için kuruldu');
+        msg = T('Ezan 14 gün için kuruldu');
       });
     } catch (e) {
       setState(() {
@@ -924,7 +961,7 @@ class _HomeState extends State<Home> {
   }
 
   Future<void> openSettings() async {
-    final items = [T('Şehir seçimi'), T('Vakit ayarları'), T('Ana sayfa ve bildirimler'), T('Renk seçimi'), T('Dil'), T('Yazı boyutu'), T('Yazı tipi')];
+    final items = [T('Şehir seçimi'), T('Vakit ayarları'), T('Ana sayfa ve bildirimler'), T('Renk seçimi'), T('Dil'), T('Yazı boyutu'), T('Yazı tipi'), T('Güncelleme')];
     final r = await showDialog<int>(
         context: context,
         builder: (c) => SimpleDialog(title: const Tx('Uygulama ayarları'), children: [
@@ -943,7 +980,7 @@ class _HomeState extends State<Home> {
         MaterialPageRoute(
             builder: (_) => r == 1
                 ? const PrayerSettingsPage()
-                : (r == 4 ? const LanguagePage() : (r == 5 ? const TextSizePage() : (r == 6 ? const FontPage() : SettingsPage(section: r))))));
+                : (r == 4 ? const LanguagePage() : (r == 5 ? const TextSizePage() : (r == 6 ? const FontPage() : (r == 7 ? const UpdatePage() : SettingsPage(section: r)))))));
     try {
       await schedule(city!);
       setState(() => msg = T('Ayarlar kaydedildi, ezan yeniden kuruldu'));
@@ -1996,6 +2033,66 @@ class _FontState extends State<FontPage> {
               value: f,
               groupValue: fontFam.value,
               onChanged: pick),
+      ]),
+    );
+  }
+}
+
+class UpdatePage extends StatefulWidget {
+  const UpdatePage({super.key});
+  @override
+  State<UpdatePage> createState() => _UpdateState();
+}
+
+class _UpdateState extends State<UpdatePage> {
+  bool busy = false;
+  String status = '';
+  UpdateInfo? info;
+
+  Future<void> check() async {
+    setState(() {
+      busy = true;
+      status = '';
+      info = null;
+    });
+    try {
+      final r = await fetchLatest();
+      if (!mounted) return;
+      setState(() {
+        if (r.build > kBuild) {
+          info = r;
+          status = '${T('Yeni sürüm var')}: ${r.build}';
+        } else {
+          status = T('Uygulama güncel');
+        }
+      });
+    } catch (_) {
+      if (mounted) setState(() => status = T('Denetlenemedi, internetinizi kontrol edin'));
+    }
+    if (mounted) setState(() => busy = false);
+  }
+
+  Future<void> install() async {
+    try {
+      await AndroidIntent(action: 'action_view', data: info!.url).launch();
+    } catch (_) {}
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(title: const Tx('Güncelleme')),
+      body: ListView(padding: const EdgeInsets.all(24), children: [
+        Center(child: Text('${T('Sürüm')} 1.0 ($kBuild)', style: Theme.of(context).textTheme.titleMedium)),
+        const SizedBox(height: 24),
+        FilledButton(onPressed: busy ? null : check, child: const Tx('Güncellemeyi denetle')),
+        const SizedBox(height: 16),
+        if (busy) const Center(child: CircularProgressIndicator()),
+        if (status.isNotEmpty) Center(child: Text(status, textAlign: TextAlign.center)),
+        if (info != null) ...[
+          const SizedBox(height: 16),
+          FilledButton.tonal(onPressed: install, child: const Tx('Güncelle')),
+        ],
       ]),
     );
   }
