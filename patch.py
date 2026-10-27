@@ -6,6 +6,7 @@ perms = '''<uses-permission android:name="android.permission.POST_NOTIFICATIONS"
 <uses-permission android:name="android.permission.USE_EXACT_ALARM"/>
 <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED"/>
 <uses-permission android:name="android.permission.VIBRATE"/>
+<uses-permission android:name="android.permission.INTERNET"/>
 '''
 recv = '''<receiver android:exported="false" android:name="com.dexterous.flutterlocalnotifications.ScheduledNotificationReceiver"/>
 <receiver android:exported="false" android:name="com.dexterous.flutterlocalnotifications.ScheduledNotificationBootReceiver">
